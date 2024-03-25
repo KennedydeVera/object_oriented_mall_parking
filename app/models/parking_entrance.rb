@@ -1,0 +1,2 @@
+class ParkingEntrance < ApplicationRecord
+end

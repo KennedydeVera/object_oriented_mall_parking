@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parking Management System</title>
+  <style>
+    /* CSS styles for the parking UI */
+    .parking-lot {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      background-color: #f0f0f0;
+      padding: 20px;
+    }
+    .parking-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0 20px;
+    }
+    .parking-row {
+      display: flex;
+      flex-wrap: nowrap;
+    }
+    .parking-slot {
+      width: 50px;
+      height: 50px;
+      border: 2px solid #333;
+      margin: 5px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 0.8em;
+    }
+    .available {
+      background-color: green;
+    }
+    .occupied {
+      background-color: red;
+    }
+    .section {
+      margin-bottom: 20px;
+    }
+    /* CSS styles for the modal */
+    .modal {
+      display: none; /* Hidden by default */
+      position: fixed; /* Stay in place */
+      z-index: 1; /* Sit on top */
+      left: 0;
+      top: 0;
+      width: 100%; /* Full width */
+      height: 100%; /* Full height */
+      overflow: auto; /* Enable scroll if needed */
+      background-color: rgb(0,0,0); /* Fallback color */
+      background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: 15% auto; /* 15% from the top and centered */
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%; /* Could be more or less, depending on screen size */
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="section">
+    <h3>Allocate Parking</h3>
+    <div class="parking-form">
+      <%= form_tag(parking_allocations_path, method: :post) do %>
+        <%= label_tag(:plate_number, "Plate Number:") %>
+        <%= text_field_tag(:plate_number) %>
+        <%= label_tag(:vehicle_type, "Vehicle Type (S/M/L):") %>
+        <%= select_tag(:vehicle_type, options_for_select([['Small (S)', 'S'], ['Medium (M)', 'M'], ['Large (L)', 'L']])) %>
+        <%= submit_tag("Allocate Parking") %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Exit Parking</h3>
+    <div class="parking-form">
+      <%= form_tag(exit_parking_path, method: :post) do %>
+        <%= label_tag(:plate_number_exit, "Plate Number:") %>
+        <%= text_field_tag(:plate_number_exit, nil, id: "plate_number_exit_input") %><br><br>
+
+        <!-- Vehicle Type (rendered automatically based on plate number) -->
+        <%= label_tag(:vehicle_type_exit, "Vehicle Type:") %>
+        <%= text_field_tag(:vehicle_type_exit, nil, readonly: true, disabled: true, id: "vehicle_type_exit_input") %><br><br>
+
+        <%= label_tag(:hours_rendered, "Hours Rendered:") %>
+        <%= text_field_tag(:hours_rendered, nil, id: "hours_rendered_input") %><br><br>
+
+        <!-- Total amount -->
+        <%= label_tag(:total_amount, "Total Amount:") %>
+        <%= text_field_tag(:total_amount, nil, readonly: true, disabled: true, id: "total_amount_field") %><br><br>
+
+        <!-- Amount paid -->
+        <%= label_tag(:amount_paid, "Amount Paid:") %>
+        <%= text_field_tag(:amount_paid) %><br><br>
+
+        <!-- Change -->
+        <%= label_tag(:change, "Change:") %>
+        <%= text_field_tag(:change, nil, readonly: true) %><br><br>
+
+        <%= submit_tag("Exit Parking") %>
+      <% end %>
+    </div>
+  </div>
+
+
+
+  <div class="section">
+    <h3>Parking Slots</h3>
+    <div class="parking-lot">
+      <!-- Small (SP) parking slots -->
+      <div class="parking-column">
+        <h4>Small Parking (SP)</h4>
+        <% 10.times do |row| %>
+          <div class="parking-row">
+            <% 3.times do |col| %>
+              <% index = row * 3 + col + 1 %>
+              <% slot = @small_slots.find_by(number: index) %>
+              <div class="parking-slot <%= slot && slot.occupied ? 'occupied' : 'available' %>"><%= slot ? slot.slot_id : '' %></div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+      <!-- Medium (MP) parking slots -->
+      <div class="parking-column">
+        <h4>Medium Parking (MP)</h4>
+        <% 10.times do |row| %>
+          <div class="parking-row">
+            <% 2.times do |col| %>
+              <% index = row * 2 + col + 1 %>
+              <% slot = @medium_slots.find_by(number: index) %>
+              <div class="parking-slot <%= slot && slot.occupied ? 'occupied' : 'available' %>"><%= slot ? slot.slot_id : '' %></div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+      <!-- Large (LP) parking slots -->
+      <div class="parking-column">
+        <h4>Large Parking (LP)</h4>
+        <% 10.times do |row| %>
+          <% slot = @large_slots.find_by(number: row + 1) %>
+          <div class="parking-slot <%= slot && slot.occupied ? 'occupied' : 'available' %>"><%= slot ? slot.slot_id : '' %></div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="myModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <p id="modal-message"></p>
+    </div>
+  </div>
+
+  <!-- JavaScript for Modal -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var modal = document.getElementById('myModal');
+      var modalMessage = document.getElementById('modal-message');
+      var span = document.getElementsByClassName('close')[0];
+
+      // Display modal when there is a flash message
+      <% if flash[:alert].present? %>
+        modalMessage.innerText = '<%= flash[:alert] %>';
+        modal.style.display = 'block';
+      <% end %>
+
+      // Close the modal when the user clicks on the close button
+      span.onclick = function() {
+        modal.style.display = 'none';
+      }
+
+      // Close the modal when the user clicks anywhere outside of it
+      window.onclick = function(event) {
+        if (event.target == modal) {
+          modal.style.display = 'none';
+        }
+      }
+   
+
+      document.getElementById('plate_number_exit_input').addEventListener('change', function() {
+              var plateNumber = this.value;
+              fetch('/get_vehicle_type?plate_number=' + plateNumber)
+                .then(response => response.json())
+                .then(data => {
+                  document.getElementById('vehicle_type_exit_input').value = data.vehicle_type;
+                })
+                .catch(error => {
+                  console.error('Error fetching vehicle type:', error);
+                });
+            });
+
+
+      document.getElementById('hours_rendered_input').addEventListener('change', function() {
+        var hoursRendered = this.value;
+        var vehicleType = document.getElementById('vehicle_type_exit_input').value;
+        fetch('/calculate_fee?hours_rendered=' + hoursRendered + '&vehicle_type=' + vehicleType)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('total_amount_field').value = data.total_amount;
+                // Calculate change
+                var totalAmount = parseFloat(data.total_amount);
+                var amountPaid = parseFloat(document.getElementById('amount_paid_field').value);
+                var change = amountPaid - totalAmount;
+                if (change >= 0) {
+                    document.getElementById('change_field').value = change.toFixed(2);
+                } else {
+                    document.getElementById('change_field').value = "Insufficient amount paid";
+                }
+            })
+            .catch(error => {
+                console.error('Error calculating total amount:', error);
+            }); 
+      });
+
+      document.getElementById('amount_paid').addEventListener('change', function() {
+        var amountPaid = parseFloat(this.value);
+        var totalAmount = parseFloat(document.getElementById('total_amount_field').value);
+        console.log('Amount Paid:', amountPaid);
+        console.log('Total Amount:', totalAmount);
+
+        // Check if the input values are valid numbers
+        if (!isNaN(amountPaid) && !isNaN(totalAmount)) {
+            var change = amountPaid - totalAmount;
+            console.log('Change calculated:', change);
+
+            // Update the "Change" field with the calculated change
+            var changeField = document.getElementById('change');
+            if (change >= 0) {
+                changeField.value = change.toFixed(2);
+                console.log('Change applied to field:', change.toFixed(2));
+            } else {
+                console.log('Insufficient amount paid.');
+                changeField.value = "Insufficient amount paid";
+            }
+        } else {
+            console.log('Invalid input.');
+            // Reset the "Change" field if input values are not valid numbers
+            document.getElementById('change').value = "";
+        }
+    });
+
+
+
+    });
+  </script>
+</body>
+</html>

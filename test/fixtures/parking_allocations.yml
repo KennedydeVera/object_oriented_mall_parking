@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  vehicle_plate_number: MyString
+  vehicle_type: MyString
+  parking_slot: one
+
+two:
+  vehicle_plate_number: MyString
+  vehicle_type: MyString
+  parking_slot: two
