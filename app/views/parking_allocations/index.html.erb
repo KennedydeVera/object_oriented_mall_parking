@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Parking Management System</title>
   <style>
-    /* CSS styles for the parking UI */
     .parking-lot {
       display: flex;
       justify-content: center;
@@ -42,25 +41,24 @@
     .section {
       margin-bottom: 20px;
     }
-    /* CSS styles for the modal */
     .modal {
-      display: none; /* Hidden by default */
-      position: fixed; /* Stay in place */
-      z-index: 1; /* Sit on top */
+      display: none;
+      position: fixed;
+      z-index: 1;
       left: 0;
       top: 0;
-      width: 100%; /* Full width */
-      height: 100%; /* Full height */
-      overflow: auto; /* Enable scroll if needed */
-      background-color: rgb(0,0,0); /* Fallback color */
-      background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgb(0,0,0);
+      background-color: rgba(0,0,0,0.4);
     }
     .modal-content {
       background-color: #fefefe;
-      margin: 15% auto; /* 15% from the top and centered */
+      margin: 15% auto;
       padding: 20px;
       border: 1px solid #888;
-      width: 80%; /* Could be more or less, depending on screen size */
+      width: 80%;
     }
     .close {
       color: #aaa;
@@ -96,37 +94,24 @@
       <%= form_tag(exit_parking_path, method: :post) do %>
         <%= label_tag(:plate_number_exit, "Plate Number:") %>
         <%= text_field_tag(:plate_number_exit, nil, id: "plate_number_exit_input") %><br><br>
-
-        <!-- Vehicle Type (rendered automatically based on plate number) -->
         <%= label_tag(:vehicle_type_exit, "Vehicle Type:") %>
         <%= text_field_tag(:vehicle_type_exit, nil, readonly: true, disabled: true, id: "vehicle_type_exit_input") %><br><br>
-
         <%= label_tag(:hours_rendered, "Hours Rendered:") %>
         <%= text_field_tag(:hours_rendered, nil, id: "hours_rendered_input") %><br><br>
-
-        <!-- Total amount -->
         <%= label_tag(:total_amount, "Total Amount:") %>
         <%= text_field_tag(:total_amount, nil, readonly: true, disabled: true, id: "total_amount_field") %><br><br>
-
-        <!-- Amount paid -->
         <%= label_tag(:amount_paid, "Amount Paid:") %>
         <%= text_field_tag(:amount_paid) %><br><br>
-
-        <!-- Change -->
         <%= label_tag(:change, "Change:") %>
         <%= text_field_tag(:change, nil, readonly: true) %><br><br>
-
         <%= submit_tag("Exit Parking") %>
       <% end %>
     </div>
   </div>
 
-
-
   <div class="section">
     <h3>Parking Slots</h3>
     <div class="parking-lot">
-      <!-- Small (SP) parking slots -->
       <div class="parking-column">
         <h4>Small Parking (SP)</h4>
         <% 10.times do |row| %>
@@ -139,7 +124,6 @@
           </div>
         <% end %>
       </div>
-      <!-- Medium (MP) parking slots -->
       <div class="parking-column">
         <h4>Medium Parking (MP)</h4>
         <% 10.times do |row| %>
@@ -152,7 +136,6 @@
           </div>
         <% end %>
       </div>
-      <!-- Large (LP) parking slots -->
       <div class="parking-column">
         <h4>Large Parking (LP)</h4>
         <% 10.times do |row| %>
@@ -163,7 +146,6 @@
     </div>
   </div>
 
-  <!-- Modal -->
   <div id="myModal" class="modal">
     <div class="modal-content">
       <span class="close">&times;</span>
@@ -171,36 +153,31 @@
     </div>
   </div>
 
-  <!-- JavaScript for Modal -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       var modal = document.getElementById('myModal');
       var modalMessage = document.getElementById('modal-message');
       var span = document.getElementsByClassName('close')[0];
 
-      // Display modal when there is a flash message
       <% if flash[:alert].present? %>
         modalMessage.innerText = '<%= flash[:alert] %>';
         modal.style.display = 'block';
       <% end %>
 
-      // Close the modal when the user clicks on the close button
       span.onclick = function() {
         modal.style.display = 'none';
       }
 
-      // Close the modal when the user clicks anywhere outside of it
       window.onclick = function(event) {
         if (event.target == modal) {
           modal.style.display = 'none';
         }
       }
-   
 
       document.getElementById('plate_number_exit_input').addEventListener('change', function() {
               var plateNumber = this.value;
               fetch('/get_vehicle_type?plate_number=' + plateNumber)
-                .then(response => response.json())
+               .then(response => response.json())
                 .then(data => {
                   document.getElementById('vehicle_type_exit_input').value = data.vehicle_type;
                 })
@@ -209,7 +186,6 @@
                 });
             });
 
-
       document.getElementById('hours_rendered_input').addEventListener('change', function() {
         var hoursRendered = this.value;
         var vehicleType = document.getElementById('vehicle_type_exit_input').value;
@@ -217,7 +193,6 @@
             .then(response => response.json())
             .then(data => {
                 document.getElementById('total_amount_field').value = data.total_amount;
-                // Calculate change
                 var totalAmount = parseFloat(data.total_amount);
                 var amountPaid = parseFloat(document.getElementById('amount_paid_field').value);
                 var change = amountPaid - totalAmount;
@@ -238,12 +213,10 @@
         console.log('Amount Paid:', amountPaid);
         console.log('Total Amount:', totalAmount);
 
-        // Check if the input values are valid numbers
         if (!isNaN(amountPaid) && !isNaN(totalAmount)) {
             var change = amountPaid - totalAmount;
             console.log('Change calculated:', change);
 
-            // Update the "Change" field with the calculated change
             var changeField = document.getElementById('change');
             if (change >= 0) {
                 changeField.value = change.toFixed(2);
@@ -254,13 +227,9 @@
             }
         } else {
             console.log('Invalid input.');
-            // Reset the "Change" field if input values are not valid numbers
             document.getElementById('change').value = "";
         }
     });
-
-
-
     });
   </script>
 </body>
