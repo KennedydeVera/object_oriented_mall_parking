@@ -16,7 +16,7 @@ Technologies Used
     Ruby on Rails: The backend framework used to develop the application.
     SQLite: The database management system used for data storage.
     HTML/CSS/JavaScript: Frontend technologies for user interface and interaction.
-    Bootstrap: Frontend framework for responsive design and UI components.
+
 
 Setup Instructions
 
